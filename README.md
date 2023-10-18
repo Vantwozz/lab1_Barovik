@@ -2,4 +2,4 @@
 
 ## Ссылка на загрузку .apk:
 
-[Скачать](https://drive.google.com/drive/folders/1P-TrI3Nx7M__-EDKf-Y6YaDJQnosV1M7?usp=sharing)
+[Скачать](https://drive.google.com/file/d/1TLC_47o139EK4trFXyQvf9K8XE3KCTNP/view?usp=sharing)
