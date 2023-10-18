@@ -82,9 +82,27 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
+              Container(
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(40),
+                  ),
+                  color: Colors.white,
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: Text(
+                    'Ivan Kapitanov 12 Group 3 course',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+              ),
               TextField(
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\-?(\d+\.?\d*)?')),
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'^\-?(\d+\.?\d*)?')),
                 ],
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -124,7 +142,8 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               TextField(
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\-?(\d+\.?\d*)?')),
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'^\-?(\d+\.?\d*)?')),
                 ],
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
