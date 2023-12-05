@@ -1,6 +1,7 @@
 import 'package:big_decimal/big_decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Lab1',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -44,13 +45,29 @@ class _MyHomePageState extends State<MyHomePage> {
       secondTextController!.text = '0';
     }
 
-    first = firstTextController!.text;
-    second = secondTextController!.text;
+    first = firstTextController!.text.replaceAll(' ', '');
+    second = secondTextController!.text.replaceAll(' ', '');
   }
 
   void onButtonMinus() {
     setValues();
     result = BigDecimal.parse(first) - BigDecimal.parse(second);
+    setState(() {});
+  }
+
+  void onButtonDivide() {
+    setValues();
+    result = BigDecimal.parse(first).divide(
+      BigDecimal.parse(second),
+      roundingMode: RoundingMode.HALF_EVEN,
+      scale: 20,
+    );
+    setState(() {});
+  }
+
+  void onButtonMultiply() {
+    setValues();
+    result = BigDecimal.parse(first) * BigDecimal.parse(second);
     setState(() {});
   }
 
@@ -101,8 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               TextField(
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'^\-?(\d+\.?\d*)?')),
+                  ThousandsSeparatorInputFormatter(),
                 ],
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -138,12 +154,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       style: TextStyle(fontSize: 25),
                     ),
                   ),
+                  TextButton(
+                    onPressed: () => second == "0" ? null : onButtonDivide(),
+                    style: TextButton.styleFrom(backgroundColor: Colors.white),
+                    child: const Text(
+                      '/',
+                      style: TextStyle(fontSize: 25),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => onButtonMultiply(),
+                    style: TextButton.styleFrom(backgroundColor: Colors.white),
+                    child: const Text(
+                      'x',
+                      style: TextStyle(fontSize: 25),
+                    ),
+                  ),
                 ],
               ),
               TextField(
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'^\-?(\d+\.?\d*)?')),
+                  ThousandsSeparatorInputFormatter(),
                 ],
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
@@ -177,6 +208,100 @@ class _MyHomePageState extends State<MyHomePage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ThousandsSeparatorInputFormatter extends TextInputFormatter {
+  static const separator = ' '; // Change this to '.' for other locales
+  RegExp regExp = RegExp(r'^\-?(\d+\.?\d*)?');
+  String nums = '0123456789';
+
+  String formatText(String text){
+    //formatEditUpdate(oldValue, newValue)
+    return "";
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    // Short-circuit if the new value is empty
+    if (newValue.text.length == 0) {
+      return newValue.copyWith(text: '');
+    }
+
+    // Handle "deletion" of separator character
+    String oldValueText = oldValue.text.replaceAll(separator, '');
+    String newValueText = newValue.text.replaceAll(separator, '');
+
+    String preformatted = '';
+
+    bool hasMinus = false;
+    bool hasPoint = false;
+    for (int i = 0; i < newValueText.length; i++) {
+      if (nums.contains(newValueText[i])) {
+        preformatted += newValueText[i];
+      } else if (newValueText[i] == '.' && !hasPoint) {
+        if (oldValueText.isEmpty) {
+          preformatted += '0.';
+          hasPoint = true;
+        } else if (!oldValueText.contains('.')) {
+          preformatted += '.';
+        } else if (oldValueText.indexOf('.') == i) {
+          preformatted += '.';
+        }
+      } else if (newValueText[i] == '-') {
+        if (hasMinus) {
+          preformatted = preformatted.substring(1, preformatted.length);
+          hasMinus = false;
+        } else {
+          if (oldValueText == '') {
+            preformatted += '0';
+          }
+          preformatted = '-$preformatted';
+          hasMinus = true;
+        }
+      }
+    }
+
+    newValueText = preformatted;
+
+    if (oldValue.text.endsWith(separator) &&
+        oldValue.text.length == newValue.text.length + 1) {
+      newValueText = newValueText.substring(0, newValueText.length - 1);
+    }
+
+    String toFormat = '';
+    String fractPart = '';
+    for (int i = 0; i < preformatted.length; i++) {
+      if (nums.contains(preformatted[i])) {
+        toFormat += preformatted[i];
+      } else if (preformatted[i] == '.') {
+        fractPart += '.${preformatted.substring(i + 1, preformatted.length)}';
+        break;
+      }
+    }
+
+    int selectionIndex = newValue.text.length - newValue.selection.extentOffset;
+    final chars = toFormat.split('');
+
+    String newString = '';
+    for (int i = chars.length - 1; i >= 0; i--) {
+      if ((chars.length - 1 - i) % 3 == 0 && i != chars.length - 1) {
+        newString = separator + newString;
+      }
+      newString = chars[i] + newString;
+    }
+
+    if (hasMinus) {
+      newString = '-$newString';
+    }
+
+    return TextEditingValue(
+      text: (newString + fractPart).toString(),
+      selection: TextSelection.collapsed(
+        offset: (newString + fractPart).length - selectionIndex,
       ),
     );
   }
