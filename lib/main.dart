@@ -1,7 +1,16 @@
+import 'package:barovik/radio_buttons.dart';
+import 'package:barovik/text_field.dart';
 import 'package:big_decimal/big_decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
+enum Operation {
+  plus,
+  minus,
+  multiply,
+  divide,
+}
 
 void main() {
   runApp(const MyApp());
@@ -31,58 +40,216 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  void onButtonPlus() {
-    setValues();
-    result = BigDecimal.parse(first) + BigDecimal.parse(second);
-    setState(() {});
-  }
+  RoundingMode roundingMode = RoundingMode.HALF_UP;
 
-  void setValues() {
+  Operation op1 = Operation.plus;
+  Operation op2 = Operation.plus;
+  Operation op3 = Operation.plus;
+
+  TextEditingController? firstTextController;
+  TextEditingController? secondTextController;
+  TextEditingController? thirdTextController;
+  TextEditingController? fourthTextController;
+
+  String first = '0';
+  String second = '0';
+  String third = '0';
+  String fourth = '0';
+  BigDecimal result = BigDecimal.fromBigInt(BigInt.from(0));
+
+  bool setValues() {
     if (firstTextController!.text.isEmpty) {
       firstTextController!.text = '0';
     }
     if (secondTextController!.text.isEmpty) {
       secondTextController!.text = '0';
     }
+    if (thirdTextController!.text.isEmpty) {
+      thirdTextController!.text = '0';
+    }
+    if (fourthTextController!.text.isEmpty) {
+      fourthTextController!.text = '0';
+    }
 
-    first = firstTextController!.text.replaceAll(' ', '');
-    second = secondTextController!.text.replaceAll(' ', '');
+    first = firstTextController!.text.replaceAll(',', '.');
+    second = secondTextController!.text.replaceAll(',', '.');
+    third = thirdTextController!.text.replaceAll(',', '.');
+    fourth = fourthTextController!.text.replaceAll(',', '.');
+
+    if (!checkInput(first)) {
+      return false;
+    }
+    if (!checkInput(second)) {
+      return false;
+    }
+    if (!checkInput(third)) {
+      return false;
+    }
+    if (!checkInput(fourth)) {
+      return false;
+    }
+
+    return true;
   }
 
-  void onButtonMinus() {
-    setValues();
-    result = BigDecimal.parse(first) - BigDecimal.parse(second);
-    setState(() {});
+  bool checkInput(String input) {
+    input = input.replaceAll(',', '.');
+    var symbols = '1234567890.- ';
+    bool lastWasSpace = false;
+    bool afterDot = false;
+    for (int i = 0; i < input.length; i++) {
+      if (!symbols.contains(input[i])) {
+        return false;
+      }
+      if (input[i] == ' ') {
+        if (afterDot) {
+          return false;
+        }
+        if (lastWasSpace) {
+          return false;
+        } else {
+          lastWasSpace = true;
+        }
+      } else {
+        lastWasSpace = false;
+      }
+      if (input[i] == '-' && i != 0) {
+        return false;
+      }
+      if (input[i] == '.') {
+        if (afterDot) {
+          return false;
+        }
+        afterDot = true;
+      }
+    }
+    var toCheckSpaces = input.substring(
+        0, !input.contains('.') ? input.length : input.indexOf('.'));
+    int nums = 0;
+    for (int i = toCheckSpaces.length - 1; i >= 0; i--) {
+      if (toCheckSpaces[i] == ' ') {
+        if (nums != 3) {
+          return false;
+        } else {
+          nums = 0;
+        }
+      } else {
+        nums++;
+      }
+    }
+    return true;
   }
 
-  void onButtonDivide() {
-    setValues();
-    result = BigDecimal.parse(first).divide(
-      BigDecimal.parse(second),
-      roundingMode: RoundingMode.HALF_EVEN,
-      scale: 20,
+  String formatResult() {
+    String res =
+        result.withScale(6, roundingMode: roundingMode).toPlainString();
+    var toAddSpaces =
+        res.substring(0, !res.contains('.') ? res.length : res.indexOf('.'));
+    var afterDot = res.contains('.')
+        ? res.substring(res.indexOf('.') + 1, res.length)
+        : '';
+    int num = 0;
+    for (int i = toAddSpaces.length - 1; i > 0; i--) {
+      if (num < 3) {
+        num++;
+      } else {
+        num = 0;
+        toAddSpaces =
+            '${toAddSpaces.substring(0, i)} ${toAddSpaces.substring(i + 1, toAddSpaces.length)}';
+      }
+    }
+    for (int i = afterDot.length - 1; i >= 0; i--) {
+      if (afterDot[i] != '0') {
+        break;
+      } else {
+        afterDot = afterDot.substring(0, afterDot.length - 1);
+      }
+    }
+    res = toAddSpaces + (afterDot.isEmpty ? '' : '.$afterDot');
+    return res;
+  }
+
+  BigDecimal _calculate(
+    BigDecimal firstVal,
+    BigDecimal secondVal,
+    Operation op,
+  ) {
+    BigDecimal result = BigDecimal.parse('0');
+    switch (op) {
+      case Operation.plus:
+        result = firstVal + secondVal;
+        break;
+      case Operation.minus:
+        result = firstVal - secondVal;
+        break;
+      case Operation.multiply:
+        result = firstVal * secondVal;
+        break;
+      case Operation.divide:
+        if (secondVal != BigDecimal.parse('0')) {
+          result = firstVal.divide(
+            secondVal,
+            roundingMode: RoundingMode.HALF_EVEN,
+            scale: 20,
+          );
+          break;
+        }
+    }
+    return result.withScale(
+      10,
+      roundingMode: RoundingMode.HALF_UP,
     );
-    setState(() {});
   }
 
-  void onButtonMultiply() {
-    setValues();
-    result = BigDecimal.parse(first) * BigDecimal.parse(second);
-    setState(() {});
+  void _straightCalculate() {
+    var tempVal1 = _calculate(
+      BigDecimal.parse(second),
+      BigDecimal.parse(third),
+      op2,
+    );
+    var tempVal2 = _calculate(
+      BigDecimal.parse(first),
+      tempVal1,
+      op1,
+    );
+    setState(() {
+      result = _calculate(tempVal2, BigDecimal.parse(fourth), op3);
+    });
   }
 
-  String first = '0';
-  String second = '0';
-  BigDecimal result = BigDecimal.fromBigInt(BigInt.from(0));
+  void _reversedCalculate() {
+    var tempVal1 = _calculate(
+      BigDecimal.parse(second),
+      BigDecimal.parse(third),
+      op2,
+    );
+    var tempVal2 = _calculate(
+      tempVal1,
+      BigDecimal.parse(fourth),
+      op3,
+    );
+    setState(() {
+      result = _calculate(tempVal2, BigDecimal.parse(first), op1);
+    });
+  }
 
-  TextEditingController? firstTextController;
-
-  TextEditingController? secondTextController;
+  onResultButtonClicked() {
+    if (setValues()) {
+      if ((op3 == Operation.multiply || op3 == Operation.divide) &&
+          (op1 != Operation.multiply && op1 != Operation.divide)) {
+        _reversedCalculate();
+      } else {
+        _straightCalculate();
+      }
+    }
+  }
 
   @override
   void initState() {
     firstTextController = TextEditingController(text: first);
     secondTextController = TextEditingController(text: second);
+    thirdTextController = TextEditingController(text: third);
+    fourthTextController = TextEditingController(text: fourth);
     super.initState();
   }
 
@@ -93,215 +260,168 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Calculator'),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(40),
-                  ),
-                  color: Colors.white,
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Text(
-                    'Ivan Kapitanov 12 Group 3 course',
-                    style: TextStyle(
-                      fontSize: 20,
+      body: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(40),
                     ),
+                    color: Colors.white,
                   ),
-                ),
-              ),
-              TextField(
-                inputFormatters: [
-                  ThousandsSeparatorInputFormatter(),
-                ],
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: BorderSide.none,
-                  ),
-                  hintText: 'First number',
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                controller: firstTextController,
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  TextButton(
-                    onPressed: () => onButtonPlus(),
-                    style: TextButton.styleFrom(backgroundColor: Colors.white),
-                    child: const Text(
-                      '+',
+                  child: const Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Text(
+                      'Ivan Kapitanov 12 Group 3 course',
                       style: TextStyle(
-                        fontSize: 25,
+                        fontSize: 20,
                       ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => onButtonMinus(),
-                    style: TextButton.styleFrom(backgroundColor: Colors.white),
-                    child: const Text(
-                      '-',
-                      style: TextStyle(fontSize: 25),
-                    ),
+                ),
+                CustomTextField(
+                  hintText: 'First number',
+                  textController: firstTextController!,
+                ),
+                RadioButtons(
+                  onValueChanged: (Operation value) {
+                    op1 = value;
+                  },
+                  op: op1,
+                ),
+                const Text(
+                  '(',
+                  style: TextStyle(
+                    fontSize: 30,
                   ),
-                  TextButton(
-                    onPressed: () => second == "0" ? null : onButtonDivide(),
-                    style: TextButton.styleFrom(backgroundColor: Colors.white),
-                    child: const Text(
-                      '/',
-                      style: TextStyle(fontSize: 25),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => onButtonMultiply(),
-                    style: TextButton.styleFrom(backgroundColor: Colors.white),
-                    child: const Text(
-                      'x',
-                      style: TextStyle(fontSize: 25),
-                    ),
-                  ),
-                ],
-              ),
-              TextField(
-                inputFormatters: [
-                  ThousandsSeparatorInputFormatter(),
-                ],
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: BorderSide.none,
-                  ),
+                ),
+                CustomTextField(
                   hintText: 'Second number',
-                  filled: true,
-                  fillColor: Colors.white,
+                  textController: secondTextController!,
                 ),
-                controller: secondTextController,
-              ),
-              Container(
-                decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(15.0),
+                RadioButtons(
+                  onValueChanged: (Operation value) {
+                    op2 = value;
+                  },
+                  op: op2,
+                ),
+                CustomTextField(
+                  hintText: 'Third number',
+                  textController: thirdTextController!,
+                ),
+                const Text(
+                  ')',
+                  style: TextStyle(
+                    fontSize: 30,
+                  ),
+                ),
+                RadioButtons(
+                  onValueChanged: (Operation value) {
+                    op3 = value;
+                  },
+                  op: op3,
+                ),
+                CustomTextField(
+                  hintText: 'Fourth number',
+                  textController: fourthTextController!,
+                ),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: ListTile(
+                        title: const Text(
+                          'BANK',
+                          style: TextStyle(fontSize: 10),
+                        ),
+                        horizontalTitleGap: 0,
+                        leading: Radio<RoundingMode>(
+                          value: RoundingMode.HALF_EVEN,
+                          groupValue: roundingMode,
+                          onChanged: (value) {
+                            setState(() {
+                              roundingMode = value!;
+                            });
+                          },
+                        ),
+                      ),
                     ),
-                    color: Colors.white),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    result.toString(),
-                    style: const TextStyle(
-                      fontSize: 16,
+                    Expanded(
+                      child: ListTile(
+                        title: const Text(
+                          'MATH',
+                          style: TextStyle(fontSize: 10),
+                        ),
+                        horizontalTitleGap: 0,
+                        leading: Radio<RoundingMode>(
+                          value: RoundingMode.HALF_UP,
+                          groupValue: roundingMode,
+                          onChanged: (value) {
+                            setState(() {
+                              roundingMode = value!;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        title: const Text(
+                          'CUT',
+                          style: TextStyle(fontSize: 10),
+                        ),
+                        horizontalTitleGap: 0,
+                        leading: Radio<RoundingMode>(
+                          value: RoundingMode.DOWN,
+                          groupValue: roundingMode,
+                          onChanged: (value) {
+                            setState(() {
+                              roundingMode = value!;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    onResultButtonClicked();
+                  },
+                  icon: const Text(
+                    '=',
+                    style: TextStyle(
+                      fontSize: 24,
                     ),
                   ),
                 ),
-              ),
-            ],
+                Container(
+                  decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(15.0),
+                      ),
+                      color: Colors.white),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      formatResult(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class ThousandsSeparatorInputFormatter extends TextInputFormatter {
-  static const separator = ' '; // Change this to '.' for other locales
-  RegExp regExp = RegExp(r'^\-?(\d+\.?\d*)?');
-  String nums = '0123456789';
-
-  String formatText(String text){
-    //formatEditUpdate(oldValue, newValue)
-    return "";
-  }
-
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    // Short-circuit if the new value is empty
-    if (newValue.text.length == 0) {
-      return newValue.copyWith(text: '');
-    }
-
-    // Handle "deletion" of separator character
-    String oldValueText = oldValue.text.replaceAll(separator, '');
-    String newValueText = newValue.text.replaceAll(separator, '');
-
-    String preformatted = '';
-
-    bool hasMinus = false;
-    bool hasPoint = false;
-    for (int i = 0; i < newValueText.length; i++) {
-      if (nums.contains(newValueText[i])) {
-        preformatted += newValueText[i];
-      } else if (newValueText[i] == '.' && !hasPoint) {
-        if (oldValueText.isEmpty) {
-          preformatted += '0.';
-          hasPoint = true;
-        } else if (!oldValueText.contains('.')) {
-          preformatted += '.';
-        } else if (oldValueText.indexOf('.') == i) {
-          preformatted += '.';
-        }
-      } else if (newValueText[i] == '-') {
-        if (hasMinus) {
-          preformatted = preformatted.substring(1, preformatted.length);
-          hasMinus = false;
-        } else {
-          if (oldValueText == '') {
-            preformatted += '0';
-          }
-          preformatted = '-$preformatted';
-          hasMinus = true;
-        }
-      }
-    }
-
-    newValueText = preformatted;
-
-    if (oldValue.text.endsWith(separator) &&
-        oldValue.text.length == newValue.text.length + 1) {
-      newValueText = newValueText.substring(0, newValueText.length - 1);
-    }
-
-    String toFormat = '';
-    String fractPart = '';
-    for (int i = 0; i < preformatted.length; i++) {
-      if (nums.contains(preformatted[i])) {
-        toFormat += preformatted[i];
-      } else if (preformatted[i] == '.') {
-        fractPart += '.${preformatted.substring(i + 1, preformatted.length)}';
-        break;
-      }
-    }
-
-    int selectionIndex = newValue.text.length - newValue.selection.extentOffset;
-    final chars = toFormat.split('');
-
-    String newString = '';
-    for (int i = chars.length - 1; i >= 0; i--) {
-      if ((chars.length - 1 - i) % 3 == 0 && i != chars.length - 1) {
-        newString = separator + newString;
-      }
-      newString = chars[i] + newString;
-    }
-
-    if (hasMinus) {
-      newString = '-$newString';
-    }
-
-    return TextEditingValue(
-      text: (newString + fractPart).toString(),
-      selection: TextSelection.collapsed(
-        offset: (newString + fractPart).length - selectionIndex,
       ),
     );
   }
