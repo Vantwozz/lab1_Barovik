@@ -89,6 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
       color1 = Colors.red;
       toReturn = false;
     } else {
+      first = firstTextController!.text.replaceAll(' ', '');
       color1 = Colors.white;
     }
     if (!checkInput(second)) {
@@ -96,6 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
       color2 = Colors.red;
       toReturn = false;
     } else {
+      second = secondTextController!.text.replaceAll(' ', '');
       color2 = Colors.white;
     }
     if (!checkInput(third)) {
@@ -103,6 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
       color3 = Colors.red;
       toReturn = false;
     } else {
+      third = thirdTextController!.text.replaceAll(' ', '');
       color3 = Colors.white;
     }
     if (!checkInput(fourth)) {
@@ -110,6 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
       color4 = Colors.red;
       toReturn = false;
     } else {
+      fourth = fourthTextController!.text.replaceAll(' ', '');
       color4 = Colors.white;
     }
 
