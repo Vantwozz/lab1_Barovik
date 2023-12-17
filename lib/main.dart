@@ -85,35 +85,44 @@ class _MyHomePageState extends State<MyHomePage> {
 
     bool toReturn = true;
     if (!checkInput(first)) {
-      errorMessage += 'Wrong input 1!\n';
+      errorMessage += 'Wrong input 1!';
       color1 = Colors.red;
       toReturn = false;
     } else {
-      first = firstTextController!.text.replaceAll(' ', '');
+      first = first.replaceAll(' ', '');
       color1 = Colors.white;
     }
     if (!checkInput(second)) {
-      errorMessage += 'Wrong input 2!\n';
+      if(!toReturn){
+        errorMessage += '\n';
+      }
+      errorMessage += 'Wrong input 2!';
       color2 = Colors.red;
       toReturn = false;
     } else {
-      second = secondTextController!.text.replaceAll(' ', '');
+      second = second.replaceAll(' ', '');
       color2 = Colors.white;
     }
     if (!checkInput(third)) {
-      errorMessage += 'Wrong input 3!\n';
+      if(!toReturn){
+        errorMessage += '\n';
+      }
+      errorMessage += 'Wrong input 3!';
       color3 = Colors.red;
       toReturn = false;
     } else {
-      third = thirdTextController!.text.replaceAll(' ', '');
+      third = third.replaceAll(' ', '');
       color3 = Colors.white;
     }
     if (!checkInput(fourth)) {
-      errorMessage += 'Wrong input 4!\n';
+      if(!toReturn){
+        errorMessage += '\n';
+      }
+      errorMessage += 'Wrong input 4!';
       color4 = Colors.red;
       toReturn = false;
     } else {
-      fourth = fourthTextController!.text.replaceAll(' ', '');
+      fourth = fourth.replaceAll(' ', '');
       color4 = Colors.white;
     }
 
@@ -237,8 +246,8 @@ class _MyHomePageState extends State<MyHomePage> {
         if (secondVal != BigDecimal.parse('0')) {
           result = firstVal.divide(
             secondVal,
-            roundingMode: RoundingMode.HALF_EVEN,
-            scale: 20,
+            roundingMode: RoundingMode.HALF_UP,
+            scale: 10,
           );
           break;
         } else {
