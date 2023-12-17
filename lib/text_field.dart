@@ -4,11 +4,13 @@ class CustomTextField extends StatelessWidget {
   const CustomTextField({
     required this.hintText,
     required this.textController,
+    required this.fillColor,
     super.key,
   });
 
   final String hintText;
   final TextEditingController textController;
+  final Color fillColor;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,7 @@ class CustomTextField extends StatelessWidget {
         ),
         hintText: hintText,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: fillColor,
       ),
       controller: textController,
     );

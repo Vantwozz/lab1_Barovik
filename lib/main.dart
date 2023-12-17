@@ -46,6 +46,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Operation op2 = Operation.plus;
   Operation op3 = Operation.plus;
 
+  Color color1 = Colors.white;
+  Color color2 = Colors.white;
+  Color color3 = Colors.white;
+  Color color4 = Colors.white;
+
   TextEditingController? firstTextController;
   TextEditingController? secondTextController;
   TextEditingController? thirdTextController;
@@ -76,20 +81,52 @@ class _MyHomePageState extends State<MyHomePage> {
     third = thirdTextController!.text.replaceAll(',', '.');
     fourth = fourthTextController!.text.replaceAll(',', '.');
 
+    String errorMessage = '';
+
+    bool toReturn = true;
     if (!checkInput(first)) {
-      return false;
+      errorMessage += 'Wrong input 1!\n';
+      color1 = Colors.red;
+      toReturn = false;
+    } else {
+      color1 = Colors.white;
     }
     if (!checkInput(second)) {
-      return false;
+      errorMessage += 'Wrong input 2!\n';
+      color2 = Colors.red;
+      toReturn = false;
+    } else {
+      color2 = Colors.white;
     }
     if (!checkInput(third)) {
-      return false;
+      errorMessage += 'Wrong input 3!\n';
+      color3 = Colors.red;
+      toReturn = false;
+    } else {
+      color3 = Colors.white;
     }
     if (!checkInput(fourth)) {
-      return false;
+      errorMessage += 'Wrong input 4!\n';
+      color4 = Colors.red;
+      toReturn = false;
+    } else {
+      color4 = Colors.white;
     }
 
-    return true;
+    setState(() {});
+    if (!toReturn) {
+      _showSnackBar(errorMessage);
+    }
+
+    return toReturn;
+  }
+
+  void _showSnackBar(String text) {
+    var s = SnackBar(
+      content: Text(text),
+      duration: const Duration(seconds: 2),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(s);
   }
 
   bool checkInput(String input) {
@@ -140,22 +177,27 @@ class _MyHomePageState extends State<MyHomePage> {
     return true;
   }
 
-  String formatResult() {
+  String formatResult(int digits, RoundingMode mode) {
     String res =
-        result.withScale(6, roundingMode: roundingMode).toPlainString();
+        result.withScale(digits, roundingMode: mode).toPlainString();
     var toAddSpaces =
         res.substring(0, !res.contains('.') ? res.length : res.indexOf('.'));
     var afterDot = res.contains('.')
         ? res.substring(res.indexOf('.') + 1, res.length)
         : '';
     int num = 0;
-    for (int i = toAddSpaces.length - 1; i > 0; i--) {
-      if (num < 3) {
+    bool hasMinus = false;
+    if (res[0] == '-') {
+      hasMinus = true;
+      toAddSpaces = toAddSpaces.substring(1, toAddSpaces.length);
+    }
+    for (int i = toAddSpaces.length - 1; i >= 0; i--) {
+      if (num < 2) {
         num++;
       } else {
         num = 0;
         toAddSpaces =
-            '${toAddSpaces.substring(0, i)} ${toAddSpaces.substring(i + 1, toAddSpaces.length)}';
+            '${toAddSpaces.substring(0, i)} ${toAddSpaces.substring(i, toAddSpaces.length)}';
       }
     }
     for (int i = afterDot.length - 1; i >= 0; i--) {
@@ -165,7 +207,9 @@ class _MyHomePageState extends State<MyHomePage> {
         afterDot = afterDot.substring(0, afterDot.length - 1);
       }
     }
-    res = toAddSpaces + (afterDot.isEmpty ? '' : '.$afterDot');
+    res = (hasMinus ? '-' : '') +
+        toAddSpaces +
+        (afterDot.isEmpty ? '' : '.$afterDot');
     return res;
   }
 
@@ -193,6 +237,8 @@ class _MyHomePageState extends State<MyHomePage> {
             scale: 20,
           );
           break;
+        } else {
+          throw Exception("You can't divide by 0!");
         }
     }
     return result.withScale(
@@ -235,11 +281,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   onResultButtonClicked() {
     if (setValues()) {
-      if ((op3 == Operation.multiply || op3 == Operation.divide) &&
-          (op1 != Operation.multiply && op1 != Operation.divide)) {
-        _reversedCalculate();
-      } else {
-        _straightCalculate();
+      try {
+        if ((op3 == Operation.multiply || op3 == Operation.divide) &&
+            (op1 != Operation.multiply && op1 != Operation.divide)) {
+          _reversedCalculate();
+        } else {
+          _straightCalculate();
+        }
+      } on Exception catch (e) {
+        _showSnackBar(e.toString());
       }
     }
   }
@@ -287,6 +337,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 CustomTextField(
                   hintText: 'First number',
                   textController: firstTextController!,
+                  fillColor: color1,
                 ),
                 RadioButtons(
                   onValueChanged: (Operation value) {
@@ -303,6 +354,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 CustomTextField(
                   hintText: 'Second number',
                   textController: secondTextController!,
+                  fillColor: color2,
                 ),
                 RadioButtons(
                   onValueChanged: (Operation value) {
@@ -313,6 +365,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 CustomTextField(
                   hintText: 'Third number',
                   textController: thirdTextController!,
+                  fillColor: color3,
                 ),
                 const Text(
                   ')',
@@ -329,6 +382,37 @@ class _MyHomePageState extends State<MyHomePage> {
                 CustomTextField(
                   hintText: 'Fourth number',
                   textController: fourthTextController!,
+                  fillColor: color4,
+                ),
+                IconButton(
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    onResultButtonClicked();
+                  },
+                  icon: const Text(
+                    '=',
+                    style: TextStyle(
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                Container(
+                  decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(15.0),
+                      ),
+                      color: Colors.white),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      formatResult(6, RoundingMode.HALF_UP),
+                      style: const TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
                 ),
                 Row(
                   children: <Widget>[
@@ -388,20 +472,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ],
                 ),
-                IconButton(
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.white,
-                  ),
-                  onPressed: () {
-                    onResultButtonClicked();
-                  },
-                  icon: const Text(
-                    '=',
-                    style: TextStyle(
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
                 Container(
                   decoration: const BoxDecoration(
                       borderRadius: BorderRadius.all(
@@ -411,7 +481,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Text(
-                      formatResult(),
+                      formatResult(0, roundingMode),
                       style: const TextStyle(
                         fontSize: 16,
                       ),
